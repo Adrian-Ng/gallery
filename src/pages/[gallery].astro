@@ -1,0 +1,23 @@
+---
+import Gallery from "../components/Gallery.astro";
+import { galleries } from "../lib/galleries";
+
+export function getStaticPaths() {
+  return Object.keys(galleries).map((gallery) => ({
+    params: { gallery },
+  }));
+}
+const { gallery } = Astro.params;
+
+const images = galleries[gallery].map((img) => ({
+  src: img.src,
+  width: img.width,
+  height: img.height,
+  alt: ""
+}));
+---
+
+<Gallery
+  title={gallery}
+  images={images}
+/>
