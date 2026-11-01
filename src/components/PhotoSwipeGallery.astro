@@ -10,6 +10,11 @@ const { images } = Astro.props;
       href={image.src}
       data-pswp-width={image.width}
       data-pswp-height={image.height}
+      data-lens={image.exif?.lens ?? ""}
+      data-focal-length={image.exif?.focalLength ?? ""}
+      data-aperture={image.exif?.aperture ?? ""}
+      data-shutter-speed={image.exif?.shutterSpeed ?? ""}
+      data-iso={image.exif?.iso ?? ""}
     >
       <img
         src={image.thumb ?? image.src}
@@ -32,13 +37,67 @@ const { images } = Astro.props;
 }
 </style>
 
-<script>
-  import PhotoSwipeLightbox from 'photoswipe/lightbox';
+<script type="module">
+  import PhotoSwipeLightbox from "photoswipe/lightbox";
+  console.log("PHOTOSWIPE SCRIPT RUNNING");
+  const metadataEl = document.getElementById("photo-metadata");
+  console.log("METADATA ELEMENT", metadataEl);
+
   const lightbox = new PhotoSwipeLightbox({
-    gallery: '#gallery',
-    children: 'a',
-    pswpModule: () => import('photoswipe'),
+    gallery: "#gallery",
+    children: "a",
+    pswpModule: () => import("photoswipe"),
+  });
+
+  lightbox.on("change", () => {
+    console.log('change');
+    const slide = lightbox.pswp.currSlide;
+    console.log(slide);
+    console.log(slide?.data);
+    if (!slide?.data?.element) return;
+
+    const el = slide.data.element;
+    console.log(el.dataset);
+
+    document.title =
+    `${el.dataset.lens} | ${el.dataset.focalLength}`;
+
+    const lens = el.dataset.lens;
+    const focal = el.dataset.focalLength;
+    const aperture = el.dataset.aperture;
+    const shutter = el.dataset.shutterSpeed;
+    const iso = el.dataset.iso;
+
+    metadataEl.innerHTML = `
+      <strong>${lens}</strong><br>
+      ${focal} · ${aperture} · ${shutter} · ISO ${iso}
+    `;
+  });
+
+  lightbox.on("openingAnimationStart", () => {
+    console.log("OPENING");
+    metadataEl.style.display = "block";
+    metadataEl.innerHTML = "TEST";
+  });
+
+  lightbox.on("close", () => {
+    metadataEl.style.display = "none";
   });
 
   lightbox.init();
 </script>
+
+<div id="photo-metadata"></div>
+
+<style>
+#photo-metadata {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  color: white;
+  z-index: 9999;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: block;
+}
+</style>
