@@ -30,15 +30,224 @@ const { images } = Astro.props;
   width: 100%;
   display: block;
 }
+
+.pswp__exif {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 1rem;
+  font-size: 0.9rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: none;
+  backdrop-filter: blur(4px);
+  z-index: 50;
+}
+
+.pswp__exif.visible {
+  display: block;
+}
+
+.exif-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+.exif-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.exif-label {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.exif-value {
+  font-weight: 500;
+}
+
+.exif-toggle {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  z-index: 51;
+  transition: background 0.2s;
+}
+
+.exif-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 </style>
 
-<script>
-  import PhotoSwipeLightbox from 'photoswipe/lightbox';
-  const lightbox = new PhotoSwipeLightbox({
-    gallery: '#gallery',
-    children: 'a',
-    pswpModule: () => import('photoswipe'),
-  });
+<script type="module">
+  import PhotoSwipeLightbox from '/node_modules/photoswipe/dist/photoswipe-lightbox.esm.js';
+  import exifr from '/node_modules/exifr/dist/full.esm.mjs';
+  
+  (async () => {
+    try {
 
-  lightbox.init();
+      const lightbox = new PhotoSwipeLightbox({
+        gallery: '#gallery',
+        children: 'a',
+        pswpModule: () => import('photoswipe'),
+      });
+
+      let exifPanel = null;
+      let exifToggle = null;
+      let currentImageUrl = null;
+      const exifCache = new Map();
+
+      async function extractExif(imageUrl) {
+        if (exifCache.has(imageUrl)) {
+          return exifCache.get(imageUrl);
+        }
+
+        try {
+          const data = await exifr.default.parse(imageUrl);
+          exifCache.set(imageUrl, data);
+          return data;
+        } catch (error) {
+          console.log('[PhotoSwipe] No EXIF data found for image:', imageUrl);
+          exifCache.set(imageUrl, null);
+          return null;
+        }
+      }
+
+      function formatExifValue(key, value) {
+        if (value === undefined || value === null) return '';
+
+        switch (key) {
+          case 'DateTimeOriginal':
+          case 'DateTime':
+            if (value instanceof Date) {
+              return value.toLocaleDateString() + ' ' + value.toLocaleTimeString();
+            }
+            return String(value);
+          case 'FNumber':
+          case 'ApertureValue':
+            return `ƒ/${parseFloat(value).toFixed(1)}`;
+          case 'ShutterSpeedValue':
+          case 'ExposureTime':
+            const exp = parseFloat(value);
+            if (exp < 1) {
+              return `1/${Math.round(1 / exp)}`;
+            }
+            return `${exp}s`;
+          case 'FocalLength':
+            return `${parseFloat(value).toFixed(0)}mm`;
+          case 'ISOSpeedRatings':
+          case 'ISO':
+            return `ISO ${value}`;
+          case 'Model':
+          case 'LensModel':
+            return String(value);
+          default:
+            return String(value);
+        }
+      }
+
+      function displayExif(exifData) {
+        if (!exifPanel) return;
+
+        const fields = [
+          { key: 'Model', label: 'Camera' },
+          { key: 'LensModel', label: 'Lens' },
+          { key: 'FNumber', label: 'Aperture' },
+          { key: 'FocalLength', label: 'Focal Length' },
+          { key: 'ExposureTime', label: 'Shutter Speed' },
+          { key: 'DateTimeOriginal', label: 'Date Taken' },
+        ];
+
+        let html = '<div class="exif-grid">';
+        let hasData = false;
+
+        for (const field of fields) {
+          const value = exifData[field.key];
+          if (value !== undefined && value !== null) {
+            const formatted = formatExifValue(field.key, value);
+            if (formatted) {
+              html += `
+                <div class="exif-item">
+                  <div class="exif-label">${field.label}</div>
+                  <div class="exif-value">${formatted}</div>
+                </div>
+              `;
+              hasData = true;
+            }
+          }
+        }
+
+        html += '</div>';
+
+        if (hasData) {
+          exifPanel.innerHTML = html;
+          exifPanel.classList.add('visible');
+          if (exifToggle) exifToggle.style.display = 'block';
+        } else {
+          exifPanel.classList.remove('visible');
+          if (exifToggle) exifToggle.style.display = 'none';
+        }
+      }
+
+      lightbox.on('init', () => {
+      });
+
+      function ensureExifPanel() {
+        if (exifPanel) return;
+        
+        const pswpElement = document.querySelector('.pswp');
+        if (pswpElement) {
+          exifPanel = document.createElement('div');
+          exifPanel.className = 'pswp__exif';
+          pswpElement.appendChild(exifPanel);
+
+          exifToggle = document.createElement('button');
+          exifToggle.className = 'exif-toggle';
+          exifToggle.textContent = 'Info';
+          exifToggle.addEventListener('click', () => {
+            if (exifPanel) {
+              exifPanel.classList.toggle('visible');
+            }
+          });
+          pswpElement.appendChild(exifToggle);
+        }
+      }
+
+      lightbox.on('change', async () => {
+        ensureExifPanel();
+        const slide = lightbox.pswp?.currSlide;
+        const imageUrl = slide?.src || slide?.data?.src;
+        if (imageUrl) {
+          currentImageUrl = String(imageUrl);
+          const exifData = await extractExif(currentImageUrl);
+          if (exifData) {
+            displayExif(exifData);
+          } else {
+            if (exifPanel) {
+              exifPanel.classList.remove('visible');
+              if (exifToggle) exifToggle.style.display = 'none';
+            }
+          }
+        }
+      });
+
+      lightbox.init();
+    } catch (err) {
+      console.error('[PhotoSwipe Error]', err);
+    }
+  })();
 </script>
