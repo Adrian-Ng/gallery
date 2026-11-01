@@ -10,12 +10,7 @@ export function getStaticPaths() {
 
 const { gallery } = Astro.params;
 
-const images = galleries[gallery].map((img) => ({
-  src: img.src,
-  width: img.width,
-  height: img.height,
-  alt: ""
-}));
+const images = galleries[gallery];
 ---
 
 <Gallery

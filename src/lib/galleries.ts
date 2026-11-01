@@ -1,3 +1,5 @@
+import metadata from "../generated/metadata.json";
+
 const allImages = import.meta.glob(
   "../assets/**/*.{jpg,jpeg,png}",
   {
@@ -10,6 +12,7 @@ const galleries = {};
 
 for (const [path, image] of Object.entries(allImages)) {
   const gallery = path.split("/").at(-2);
+  const filename = path.split("/").pop();
 
   galleries[gallery] ??= [];
 
@@ -17,7 +20,8 @@ for (const [path, image] of Object.entries(allImages)) {
     src: image.src,
     width: image.width,
     height: image.height,
-    alt: ""
+    alt: "",
+    exif: metadata[filename] ?? null
   });
 }
 
