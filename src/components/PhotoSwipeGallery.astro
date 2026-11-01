@@ -1,5 +1,4 @@
 ---
-import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import 'photoswipe/style.css';
 
 const { images } = Astro.props;
@@ -11,7 +10,6 @@ const { images } = Astro.props;
       href={image.src}
       data-pswp-width={image.width}
       data-pswp-height={image.height}
-      target="_blank"
     >
       <img
         src={image.thumb ?? image.src}
@@ -35,6 +33,7 @@ const { images } = Astro.props;
 </style>
 
 <script>
+  import PhotoSwipeLightbox from 'photoswipe/lightbox';
   const lightbox = new PhotoSwipeLightbox({
     gallery: '#gallery',
     children: 'a',
