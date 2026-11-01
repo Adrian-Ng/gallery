@@ -1,0 +1,45 @@
+---
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
+import 'photoswipe/style.css';
+
+const { images } = Astro.props;
+---
+
+<div class="gallery" id="gallery">
+  {images.map((image) => (
+    <a
+      href={image.src}
+      data-pswp-width={image.width}
+      data-pswp-height={image.height}
+      target="_blank"
+    >
+      <img
+        src={image.thumb ?? image.src}
+        alt={image.alt ?? ""}
+      />
+    </a>
+  ))}
+</div>
+
+<style>
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.gallery img {
+  width: 100%;
+  display: block;
+}
+</style>
+
+<script>
+  const lightbox = new PhotoSwipeLightbox({
+    gallery: '#gallery',
+    children: 'a',
+    pswpModule: () => import('photoswipe'),
+  });
+
+  lightbox.init();
+</script>
