@@ -4,9 +4,10 @@ import { galleries } from "../lib/galleries";
 
 export function getStaticPaths() {
   return Object.keys(galleries).map((gallery) => ({
-    params: { gallery },
+    params: { gallery }
   }));
 }
+
 const { gallery } = Astro.params;
 
 const images = galleries[gallery].map((img) => ({
