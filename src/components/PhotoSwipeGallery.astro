@@ -39,9 +39,7 @@ const { images } = Astro.props;
 
 <script type="module">
   import PhotoSwipeLightbox from "photoswipe/lightbox";
-  console.log("PHOTOSWIPE SCRIPT RUNNING");
   const metadataEl = document.getElementById("photo-metadata");
-  console.log("METADATA ELEMENT", metadataEl);
 
   const lightbox = new PhotoSwipeLightbox({
     gallery: "#gallery",
@@ -50,14 +48,11 @@ const { images } = Astro.props;
   });
 
   lightbox.on("change", () => {
-    console.log('change');
     const slide = lightbox.pswp.currSlide;
-    console.log(slide);
-    console.log(slide?.data);
+
     if (!slide?.data?.element) return;
 
     const el = slide.data.element;
-    console.log(el.dataset);
 
     document.title =
     `${el.dataset.lens} | ${el.dataset.focalLength}`;
@@ -75,9 +70,7 @@ const { images } = Astro.props;
   });
 
   lightbox.on("openingAnimationStart", () => {
-    console.log("OPENING");
     metadataEl.style.display = "block";
-    metadataEl.innerHTML = "TEST";
   });
 
   lightbox.on("close", () => {
@@ -89,15 +82,3 @@ const { images } = Astro.props;
 
 <div id="photo-metadata"></div>
 
-<style>
-#photo-metadata {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  color: white;
-  z-index: 9999;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  display: block;
-}
-</style>
