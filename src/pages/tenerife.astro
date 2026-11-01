@@ -1,1 +1,23 @@
-tenerife
+---
+import Gallery from "../components/Gallery.astro";
+
+const imageModules = import.meta.glob(
+  "../assets/tenerife/*.{jpg,jpeg,png}",
+  {
+    eager: true,
+    import: "default"
+  }
+);
+
+const images = Object.values(imageModules).map((img) => ({
+  src: img.src,
+  width: img.width,
+  height: img.height,
+  alt: ""
+}));
+---
+
+<Gallery
+  title="Tenerife"
+  images={images}
+/>

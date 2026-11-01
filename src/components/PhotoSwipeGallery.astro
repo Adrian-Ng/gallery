@@ -6,7 +6,7 @@ const { images } = Astro.props;
 ---
 
 <div class="gallery" id="gallery">
-  {images.map((image) => (
+  {images.map((image: { src: string | URL | null | undefined; width: unknown; height: unknown; thumb: any; alt: any; }) => (
     <a
       href={image.src}
       data-pswp-width={image.width}
